@@ -8,10 +8,9 @@ class pointer_vector
 {
 	uint8_t* data_;
 
-	void reallocate_copy_destroy()
+	void reallocate_copy_destroy(size_t n_bytes_to_allocate)
 	{
 		//reallocate
-		size_t n_bytes_to_allocate = 2 * size_t(*reinterpret_cast<uint8_t**>(data_) - data_ - sizeof(uint8_t*));
 		uint8_t* new_data = reinterpret_cast<uint8_t*>(new uint8_t[n_bytes_to_allocate]);
 		//copy
 		*reinterpret_cast<uint8_t**>(new_data) = new_data + n_bytes_to_allocate;
@@ -22,11 +21,40 @@ class pointer_vector
 		data_ = new_data;
 	}
 
+	size_t allocated_size() const
+	{
+		return (*reinterpret_cast<uint8_t**>(data_) - data_ - 2 * sizeof(uint8_t*)) / sizeof(T);
+	}
+
 public:
+	void reserve(size_t size)
+	{
+		if (allocated_size() < size)
+			reallocate_copy_destroy(2 * sizeof(uint8_t*) + size * sizeof(T));
+	}
+
+	void resize(size_t size)
+	{
+		reserve(size);
+		auto iter = end();
+		*reinterpret_cast<uint8_t**>(data_ + sizeof(uint8_t*)) = (data_ + 2 * sizeof(uint8_t*) + size * sizeof(T));
+		for (; iter < end(); ++iter)
+			*iter = T();
+	}
+
+	void resize(size_t size, const T& data)
+	{
+		reserve(size);
+		auto iter = end();
+		*reinterpret_cast<uint8_t**>(data_ + sizeof(uint8_t*)) = (data_ + 2 * sizeof(uint8_t*) + size * sizeof(T));
+		for (; iter < end(); ++iter)
+			*iter = data;
+	}
+
 	void push_back(const T& data)
 	{
 		if (end() == *reinterpret_cast<T**>(data_))
-			reallocate_copy_destroy();
+			reallocate_copy_destroy(2 * size_t(*reinterpret_cast<uint8_t**>(data_) - data_ - sizeof(uint8_t*)));
 		std::copy(&data, &data + 1, end());
 		++*reinterpret_cast<T**>(data_ + sizeof(uint8_t*));
 	}
