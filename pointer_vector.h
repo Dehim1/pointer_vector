@@ -39,7 +39,9 @@ public:
 		auto iter = end();
 		*reinterpret_cast<uint8_t**>(data_ + sizeof(uint8_t*)) = (data_ + 2 * sizeof(uint8_t*) + size * sizeof(T));
 		for (; iter < end(); ++iter)
-			*iter = T();
+			new (iter) T();
+		for (--iter; iter >= end(); --iter)
+			iter->~T();
 	}
 
 	void resize(size_t size, const T& data)
@@ -48,24 +50,29 @@ public:
 		auto iter = end();
 		*reinterpret_cast<uint8_t**>(data_ + sizeof(uint8_t*)) = (data_ + 2 * sizeof(uint8_t*) + size * sizeof(T));
 		for (; iter < end(); ++iter)
-			*iter = data;
+			new (iter) T(data);
+		for (--iter; iter >= end(); --iter)
+			iter->~T();
 	}
 
 	void push_back(const T& data)
 	{
 		if (end() == *reinterpret_cast<T**>(data_))
 			reallocate_copy_destroy(2 * size_t(*reinterpret_cast<uint8_t**>(data_) - data_ - sizeof(uint8_t*)));
-		std::copy(&data, &data + 1, end());
+		new (*reinterpret_cast<T**>(data_ + sizeof(uint8_t*))) T(data);
 		++*reinterpret_cast<T**>(data_ + sizeof(uint8_t*));
 	}
 
 	void pop_back()
 	{
 		--*reinterpret_cast<T**>(data_ + sizeof(uint8_t*));
+		end()->~T();
 	}
 
 	void clear()
 	{
+		for (auto& ref : *this)
+			ref.~T();
 		*reinterpret_cast<uint8_t**>(data_ + sizeof(uint8_t*)) = data_ + 2 * sizeof(uint8_t*);
 	}
 
@@ -120,6 +127,8 @@ public:
 
 	void delete_this()
 	{
+		for (auto& ref : *this)
+			ref.~T();
 		delete[] data_;
 	}
 
