@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="pointer_vector&lt;*&gt;">
+    <DisplayString>{{ size={*($T1**)(data_+sizeof(uint8_t*))-($T1*)(data_+2*sizeof(uint8_t*))} }}</DisplayString>
+    <Expand>
+      <Item Name="[capacity]">*($T1**)(data_)-($T1*)(data_+2*sizeof(uint8_t*))</Item>
+      <ArrayItems>
+        <Size>*($T1**)(data_+sizeof(uint8_t*))-($T1*)(data_+2*sizeof(uint8_t*))</Size>
+        <ValuePointer>($T1*)(data_+2*sizeof(uint8_t*))</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+</AutoVisualizer>
